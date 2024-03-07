@@ -5,6 +5,14 @@ import { Construct } from "constructs";
 export interface HitCounterProps {
   /** the function for which we want to count url hits **/
   downstream: IFunction;
+  /**
+   * The read capacity units for the table
+   *
+   * Must be greater than 5 and lower than 20
+   *
+   * @default 5
+   */
+  readCapacity?: number;
 }
 
 export class HitCounter extends Construct {
@@ -12,11 +20,16 @@ export class HitCounter extends Construct {
   public readonly handler: Function;
 
   constructor(scope: Construct, id: string, props: HitCounterProps) {
+    if (props.readCapacity !== undefined && (props.readCapacity < 5 || props.readCapacity > 20)) {
+      throw new Error("readCapacity must be greater than 5 and less than 20");
+    }
+
     super(scope, id);
 
     const table = new Table(this, "Hits", {
       partitionKey: { name: "path", type: AttributeType.STRING },
-      encryption: TableEncryption.AWS_MANAGED
+      encryption: TableEncryption.AWS_MANAGED,
+      readCapacity: props.readCapacity ?? 5,
     });
 
     this.handler = new Function(this, "HitCounterHandler", {
