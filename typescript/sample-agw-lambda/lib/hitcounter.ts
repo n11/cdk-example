@@ -1,4 +1,4 @@
-import { AttributeType, Table } from "aws-cdk-lib/aws-dynamodb";
+import { AttributeType, Table, TableEncryption } from "aws-cdk-lib/aws-dynamodb";
 import { Code, Function, IFunction, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
@@ -16,6 +16,7 @@ export class HitCounter extends Construct {
 
     const table = new Table(this, "Hits", {
       partitionKey: { name: "path", type: AttributeType.STRING },
+      encryption: TableEncryption.AWS_MANAGED
     });
 
     this.handler = new Function(this, "HitCounterHandler", {
