@@ -1,0 +1,39 @@
+---
+  Metadata:
+    TemplateId: "arn:aws:cloudformation:us-east-1:949110029863:generatedTemplate/2a85e63d-0de2-4def-9f7f-7fa90af30381"
+  Resources:
+    ApiGatewayRestApi00agg6czs4o20076HUF:
+      UpdateReplacePolicy: "Retain"
+      Type: "AWS::ApiGateway::RestApi"
+      DeletionPolicy: "Retain"
+      Properties:
+        ApiKeySourceType: "HEADER"
+        Description: "API for PostReader Application(Manual)"
+        EndpointConfiguration:
+          Types:
+          - "REGIONAL"
+        DisableExecuteApiEndpoint: false
+        Name: "PostReaderApiManual"
+    ApiGatewayStage00dev00iWnfk:
+      UpdateReplacePolicy: "Retain"
+      Type: "AWS::ApiGateway::Stage"
+      DeletionPolicy: "Retain"
+      Properties:
+        RestApiId:
+          Ref: "ApiGatewayRestApi00agg6czs4o20076HUF"
+        DeploymentId:
+          Fn::GetAtt:
+          - "ApiGatewayDeployment00zsbjnt00fG0Ib"
+          - "DeploymentId"
+        StageName: "dev"
+        CacheClusterSize: "0.5"
+        TracingEnabled: false
+        CacheClusterEnabled: false
+    ApiGatewayDeployment00zsbjnt00fG0Ib:
+      UpdateReplacePolicy: "Retain"
+      Type: "AWS::ApiGateway::Deployment"
+      DeletionPolicy: "Retain"
+      Properties:
+        RestApiId:
+          Ref: "ApiGatewayRestApi00agg6czs4o20076HUF"
+  

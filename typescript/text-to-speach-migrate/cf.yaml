@@ -1,0 +1,1273 @@
+{
+ "Resources": {
+  "LabLambdaRoleD8495331": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": [
+         "apigateway.amazonaws.com",
+         "dynamodb.amazonaws.com",
+         "lambda.amazonaws.com"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ],
+    "RoleName": "Lab-Lambda-Role"
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/LabLambdaRole/Resource"
+   }
+  },
+  "LambdaExecutionPolicy01E61603": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem",
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "polly:SynthesizeSpeech",
+        "s3:GetBucketLocation",
+        "s3:PutObject",
+        "s3:PutObjectAcl",
+        "sns:Publish"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LambdaExecutionPolicy",
+    "Roles": [
+     {
+      "Ref": "LabLambdaRoleD8495331"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/LambdaExecutionPolicy/Resource"
+   }
+  },
+  "postsF8358DF8": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "id",
+      "KeyType": "HASH"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/posts/Resource"
+   }
+  },
+  "audioposts2024031570591FBE": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketEncryption": {
+     "ServerSideEncryptionConfiguration": [
+      {
+       "ServerSideEncryptionByDefault": {
+        "SSEAlgorithm": "AES256"
+       }
+      }
+     ]
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/audioposts-20240315/Resource"
+   }
+  },
+  "newpostsED2E99EE": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "New posts",
+    "FifoTopic": false
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/new_posts/Resource"
+   }
+  },
+  "PostReaderNewPostF7A1D5EC": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "bd8c95c362fc02670f9af44f45a7dd5abd06df9629997816d0456bae559c6218.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "DB_TABLE_NAME": {
+       "Ref": "postsF8358DF8"
+      },
+      "SNS_TOPIC": {
+       "Ref": "newpostsED2E99EE"
+      }
+     }
+    },
+    "Handler": "post_reader_newpost.lambda_handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "LabLambdaRoleD8495331",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.12",
+    "Timeout": 10
+   },
+   "DependsOn": [
+    "LabLambdaRoleD8495331"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/PostReader_NewPost/Resource",
+    "aws:asset:path": "asset.bd8c95c362fc02670f9af44f45a7dd5abd06df9629997816d0456bae559c6218",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "ConvertToAudio429FF0A1": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "bd8c95c362fc02670f9af44f45a7dd5abd06df9629997816d0456bae559c6218.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "DB_TABLE_NAME": {
+       "Ref": "postsF8358DF8"
+      },
+      "SNS_TOPIC": {
+       "Ref": "newpostsED2E99EE"
+      },
+      "BUCKET_NAME": {
+       "Ref": "audioposts2024031570591FBE"
+      }
+     }
+    },
+    "Handler": "convert_to_audio.lambda_handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "LabLambdaRoleD8495331",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.12",
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "LabLambdaRoleD8495331"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/ConvertToAudio/Resource",
+    "aws:asset:path": "asset.bd8c95c362fc02670f9af44f45a7dd5abd06df9629997816d0456bae559c6218",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "ConvertToAudioAllowInvokeTextToSpeechStacknewpostsA8A9A0AD611447F3": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ConvertToAudio429FF0A1",
+      "Arn"
+     ]
+    },
+    "Principal": "sns.amazonaws.com",
+    "SourceArn": {
+     "Ref": "newpostsED2E99EE"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/ConvertToAudio/AllowInvoke:TextToSpeechStacknewpostsA8A9A0AD"
+   }
+  },
+  "ConvertToAudionewposts2E13D622": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Endpoint": {
+     "Fn::GetAtt": [
+      "ConvertToAudio429FF0A1",
+      "Arn"
+     ]
+    },
+    "Protocol": "lambda",
+    "TopicArn": {
+     "Ref": "newpostsED2E99EE"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/ConvertToAudio/new_posts/Resource"
+   }
+  },
+  "PostReaderGetPostBF65D8C0": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "bd8c95c362fc02670f9af44f45a7dd5abd06df9629997816d0456bae559c6218.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "DB_TABLE_NAME": {
+       "Ref": "postsF8358DF8"
+      }
+     }
+    },
+    "Handler": "post_reader_getpost.lambda_handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "LabLambdaRoleD8495331",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.12",
+    "Timeout": 10
+   },
+   "DependsOn": [
+    "LabLambdaRoleD8495331"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/PostReader_GetPost/Resource",
+    "aws:asset:path": "asset.bd8c95c362fc02670f9af44f45a7dd5abd06df9629997816d0456bae559c6218",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "PostReaderApiD62003DF": {
+   "Type": "AWS::ApiGateway::RestApi",
+   "Properties": {
+    "Description": "API for PostReader Application",
+    "EndpointConfiguration": {
+     "Types": [
+      "REGIONAL"
+     ]
+    },
+    "Name": "PostReaderApi"
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/PostReaderApi/Resource"
+   }
+  },
+  "PostReaderApiDeploymentB87B82CEd5d287a5c03129e1c3dd053bbf5ee9a4": {
+   "Type": "AWS::ApiGateway::Deployment",
+   "Properties": {
+    "Description": "API for PostReader Application",
+    "RestApiId": {
+     "Ref": "PostReaderApiD62003DF"
+    }
+   },
+   "DependsOn": [
+    "PostReaderApiGETC0667A88",
+    "PostReaderApiPOSTE79A6DD7"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/PostReaderApi/Deployment/Resource"
+   }
+  },
+  "PostReaderApiDeploymentStagedevF768D942": {
+   "Type": "AWS::ApiGateway::Stage",
+   "Properties": {
+    "DeploymentId": {
+     "Ref": "PostReaderApiDeploymentB87B82CEd5d287a5c03129e1c3dd053bbf5ee9a4"
+    },
+    "RestApiId": {
+     "Ref": "PostReaderApiD62003DF"
+    },
+    "StageName": "dev"
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/PostReaderApi/DeploymentStage.dev/Resource"
+   }
+  },
+  "PostReaderApiPOSTApiPermissionTextToSpeechStackPostReaderApi50360C8CPOST23E5BCDD": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "PostReaderNewPostF7A1D5EC",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "PostReaderApiD62003DF"
+       },
+       "/",
+       {
+        "Ref": "PostReaderApiDeploymentStagedevF768D942"
+       },
+       "/POST/"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/PostReaderApi/Default/POST/ApiPermission.TextToSpeechStackPostReaderApi50360C8C.POST.."
+   }
+  },
+  "PostReaderApiPOSTApiPermissionTestTextToSpeechStackPostReaderApi50360C8CPOST9879D2AD": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "PostReaderNewPostF7A1D5EC",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "PostReaderApiD62003DF"
+       },
+       "/test-invoke-stage/POST/"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/PostReaderApi/Default/POST/ApiPermission.Test.TextToSpeechStackPostReaderApi50360C8C.POST.."
+   }
+  },
+  "PostReaderApiPOSTE79A6DD7": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:",
+        {
+         "Ref": "AWS::Region"
+        },
+        ":lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "PostReaderNewPostF7A1D5EC",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Fn::GetAtt": [
+      "PostReaderApiD62003DF",
+      "RootResourceId"
+     ]
+    },
+    "RestApiId": {
+     "Ref": "PostReaderApiD62003DF"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/PostReaderApi/Default/POST/Resource"
+   }
+  },
+  "PostReaderApiGETApiPermissionTextToSpeechStackPostReaderApi50360C8CGETE985CE36": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "PostReaderGetPostBF65D8C0",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "PostReaderApiD62003DF"
+       },
+       "/",
+       {
+        "Ref": "PostReaderApiDeploymentStagedevF768D942"
+       },
+       "/GET/"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/PostReaderApi/Default/GET/ApiPermission.TextToSpeechStackPostReaderApi50360C8C.GET.."
+   }
+  },
+  "PostReaderApiGETApiPermissionTestTextToSpeechStackPostReaderApi50360C8CGETF6038A9F": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "PostReaderGetPostBF65D8C0",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "PostReaderApiD62003DF"
+       },
+       "/test-invoke-stage/GET/"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/PostReaderApi/Default/GET/ApiPermission.Test.TextToSpeechStackPostReaderApi50360C8C.GET.."
+   }
+  },
+  "PostReaderApiGETC0667A88": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "GET",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:",
+        {
+         "Ref": "AWS::Region"
+        },
+        ":lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "PostReaderGetPostBF65D8C0",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Fn::GetAtt": [
+      "PostReaderApiD62003DF",
+      "RootResourceId"
+     ]
+    },
+    "RestApiId": {
+     "Ref": "PostReaderApiD62003DF"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/PostReaderApi/Default/GET/Resource"
+   }
+  },
+  "wwwaudioposts202403153A30B80B": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "aws-cdk:cr-owned:1a4e46db",
+      "Value": "true"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/www-audioposts-20240315/Resource"
+   }
+  },
+  "wwwaudioposts20240315Policy201BDFB2": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "wwwaudioposts202403153A30B80B"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Principal": {
+        "CanonicalUser": {
+         "Fn::GetAtt": [
+          "WebsiteDistributionOrigin1S3Origin432B5882",
+          "S3CanonicalUserId"
+         ]
+        }
+       },
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          {
+           "Fn::GetAtt": [
+            "wwwaudioposts202403153A30B80B",
+            "Arn"
+           ]
+          },
+          "/*"
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:GetObject",
+       "Condition": {
+        "StringEquals": {
+         "AWS:SourceArn": {
+          "Fn::Join": [
+           "",
+           [
+            "arn:aws:cloudfront::",
+            {
+             "Ref": "AWS::AccountId"
+            },
+            ":distribution/",
+            {
+             "Ref": "WebsiteDistribution75DCDA0B"
+            }
+           ]
+          ]
+         }
+        }
+       },
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "cloudfront.amazonaws.com"
+       },
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          {
+           "Fn::GetAtt": [
+            "wwwaudioposts202403153A30B80B",
+            "Arn"
+           ]
+          },
+          "/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/www-audioposts-20240315/Policy/Resource"
+   }
+  },
+  "DeployFilesAwsCliLayerF562E16D": {
+   "Type": "AWS::Lambda::LayerVersion",
+   "Properties": {
+    "Content": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "3322b7049fb0ed2b7cbb644a2ada8d1116ff80c32dca89e6ada846b5de26f961.zip"
+    },
+    "Description": "/opt/awscli/aws"
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/DeployFiles/AwsCliLayer/Resource",
+    "aws:asset:path": "asset.3322b7049fb0ed2b7cbb644a2ada8d1116ff80c32dca89e6ada846b5de26f961.zip",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Content"
+   }
+  },
+  "DeployFilesCustomResource51EC1601": {
+   "Type": "Custom::CDKBucketDeployment",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C81C01536",
+      "Arn"
+     ]
+    },
+    "SourceBucketNames": [
+     {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     }
+    ],
+    "SourceObjectKeys": [
+     "005f70d175c113ec50328f2cde3fa400aaac1ac5e29b8266af3a567a676c467e.zip"
+    ],
+    "DestinationBucketName": {
+     "Ref": "wwwaudioposts202403153A30B80B"
+    },
+    "Prune": true,
+    "Include": [
+     "index.html",
+     "scripts.js",
+     "style.css"
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/DeployFiles/CustomResource/Default"
+   }
+  },
+  "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/Resource"
+   }
+  },
+  "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:GetBucket*",
+        "s3:GetObject*",
+        "s3:List*"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:",
+           {
+            "Ref": "AWS::Partition"
+           },
+           ":s3:::",
+           {
+            "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+           },
+           "/*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:",
+           {
+            "Ref": "AWS::Partition"
+           },
+           ":s3:::",
+           {
+            "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+           }
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "s3:Abort*",
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:GetObject*",
+        "s3:List*",
+        "s3:PutObject",
+        "s3:PutObjectLegalHold",
+        "s3:PutObjectRetention",
+        "s3:PutObjectTagging",
+        "s3:PutObjectVersionTagging"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "wwwaudioposts202403153A30B80B",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "wwwaudioposts202403153A30B80B",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF",
+    "Roles": [
+     {
+      "Ref": "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C81C01536": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "2d56e153cac88d3e0c2f842e8e6f6783b8725bf91f95e0673b4725448a56e96d.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "AWS_CA_BUNDLE": "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"
+     }
+    },
+    "Handler": "index.handler",
+    "Layers": [
+     {
+      "Ref": "DeployFilesAwsCliLayerF562E16D"
+     }
+    ],
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.9",
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF",
+    "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/Resource",
+    "aws:asset:path": "asset.2d56e153cac88d3e0c2f842e8e6f6783b8725bf91f95e0673b4725448a56e96d",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "OriginAccessControl": {
+   "Type": "AWS::CloudFront::OriginAccessControl",
+   "Properties": {
+    "OriginAccessControlConfig": {
+     "Description": "Access Control",
+     "Name": "OriginAccessControlForContentsBucket",
+     "OriginAccessControlOriginType": "s3",
+     "SigningBehavior": "always",
+     "SigningProtocol": "sigv4"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/OriginAccessControl"
+   }
+  },
+  "WebsiteDistributionOrigin1S3Origin432B5882": {
+   "Type": "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+   "Properties": {
+    "CloudFrontOriginAccessIdentityConfig": {
+     "Comment": "Identity for TextToSpeechStackWebsiteDistributionOrigin1DEE08FBB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/WebsiteDistribution/Origin1/S3Origin/Resource"
+   }
+  },
+  "WebsiteDistribution75DCDA0B": {
+   "Type": "AWS::CloudFront::Distribution",
+   "Properties": {
+    "DistributionConfig": {
+     "DefaultCacheBehavior": {
+      "AllowedMethods": [
+       "GET",
+       "HEAD"
+      ],
+      "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+      "Compress": true,
+      "TargetOriginId": "TextToSpeechStackWebsiteDistributionOrigin1DEE08FBB",
+      "ViewerProtocolPolicy": "redirect-to-https"
+     },
+     "DefaultRootObject": "index.html",
+     "Enabled": true,
+     "HttpVersion": "http2and3",
+     "IPV6Enabled": true,
+     "Origins": [
+      {
+       "DomainName": {
+        "Fn::GetAtt": [
+         "wwwaudioposts202403153A30B80B",
+         "RegionalDomainName"
+        ]
+       },
+       "Id": "TextToSpeechStackWebsiteDistributionOrigin1DEE08FBB",
+       "OriginAccessControlId": {
+        "Fn::GetAtt": [
+         "OriginAccessControl",
+         "Id"
+        ]
+       },
+       "S3OriginConfig": {
+        "OriginAccessIdentity": ""
+       }
+      }
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/WebsiteDistribution/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/3WQ0WrjMBBFv6XvirZpviB1KRR2aUnKvgZZmninkSWjGa0xwv9eJLmuX/o0944ul9F5kPvDQd7fqZF22tx2FluZzqz0TaiRLglVL9PJWxDN1ZX55i3qKduqZmEmp3pvWpneVVuTRcyCDjI9Rn0DzstF1fGoCBb53bj1syBHMr37AXWpLOIcW9IBB0bv8nbrZ2FV3xol03N0+iux1W8QeiRa3G81QfgLofgzus4C+zWfr78kRQRM8piHMDBYP/XgWNZLn9bFLNSAnWIY1STTCYiPAxZmi/yO5u3GnVl1hVkVJyAfg4bC5w/wP2/yY1Wz0NZHcw3esUzN1b0G7NAdtQaixjsO3oonJA7YxvLpbeDFgGPkQrrJPc+556fEtmae17tEQZFvRdfl3GvkIfKC/mIz04saSVuUx5EaiwWzaCKx79eWSmbVjXcGK3XnDcgP+vX/4V7u93J/90GIuxAdYw/yVOcnDTmR/7cCAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "TextToSpeechStack/CDKMetadata/Default"
+   },
+   "Condition": "CDKMetadataAvailable"
+  }
+ },
+ "Outputs": {
+  "PostReaderApiEndpoint8FE9E215": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "PostReaderApiD62003DF"
+      },
+      ".execute-api.",
+      {
+       "Ref": "AWS::Region"
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "PostReaderApiDeploymentStagedevF768D942"
+      },
+      "/"
+     ]
+    ]
+   }
+  },
+  "DistributionDomainName": {
+   "Description": "The Domain Name of the CloudFront Distribution",
+   "Value": {
+    "Fn::GetAtt": [
+     "WebsiteDistribution75DCDA0B",
+     "DomainName"
+    ]
+   }
+  }
+ },
+ "Conditions": {
+  "CDKMetadataAvailable": {
+   "Fn::Or": [
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "af-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-northwest-1"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "il-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "sa-east-1"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-2"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}
